@@ -1,0 +1,30 @@
+{
+  "name": "watsonx",
+  "version": "1.0.0",
+  "description": "watsonx hackathon news validity checking agent",
+  "license": "ISC",
+  "author": "daniel paul, manuel siju, sankardas devadas, vishnu gopal, leno simon anand",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "server": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "body-parser": "^2.2.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2",
+    "node-fetch-event-source": "^1.0.4",
+    "path": "^0.12.7",
+    "xmlhttprequest": "^1.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

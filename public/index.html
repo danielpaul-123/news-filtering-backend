@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>News Validity Checker</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        #result { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+        input[type="text"] { width: 400px; padding: 8px; }
+        button { padding: 8px 16px; }
+    </style>
+</head>
+<body>
+    <h2>News Validity Checker</h2>
+    <form id="scoreForm">
+        <label for="message">Enter news/message:</label><br>
+        <input type="text" id="message" name="message" required><br><br>
+        <button type="submit">Check Validity</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        const form = document.getElementById('scoreForm');
+        const resultDiv = document.getElementById('result');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = document.getElementById('message').value;
+            resultDiv.textContent = 'Checking...';
+            fetch('/score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) {
+                    resultDiv.innerHTML = `<span class='error'>Error: ${data.error || 'Unknown error'}</span>`;
+                    console.error('Error:', data);
+                } else {
+                    resultDiv.innerHTML = `<span class='success'>Response: <pre>${JSON.stringify(data, null, 2)}</pre></span>`;
+                    console.log('Response:', data);
+                }
+            })
+            .catch(err => {
+                resultDiv.innerHTML = `<span class='error'>Error: ${err}</span>`;
+                console.error('Error:', err);
+            });
+        });
+    </script>
+</body>
+</html>

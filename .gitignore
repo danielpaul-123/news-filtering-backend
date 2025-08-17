@@ -1,0 +1,4 @@
+node_modules/
+apikey.json
+events.log
+sse_response.txt
