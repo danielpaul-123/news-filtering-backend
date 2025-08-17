@@ -15,6 +15,10 @@ const API_KEY = process.env.WATSONX_API_KEY;
 const DEPLOYMENT_URL =
   "https://us-south.ml.cloud.ibm.com/ml/v4/deployments/dc4f26a3-0d9c-47ec-bb28-cce066b5b82b/ai_service_stream?version=2021-05-01";
 
+// Alternative non-streaming endpoint for testing
+const NON_STREAMING_URL = 
+  "https://us-south.ml.cloud.ibm.com/ml/v4/deployments/dc4f26a3-0d9c-47ec-bb28-cce066b5b82b/text/generation?version=2021-05-01";
+
 async function getToken() {
   const res = await fetch("https://iam.cloud.ibm.com/identity/token", {
     method: "POST",
@@ -42,6 +46,42 @@ app.get("/stream", async (req, res) => {
   try {
     const token = await getToken();
     const prompt = req.query.prompt || "Hello from Watsonx Orchestrate";
+
+    console.log("🔑 Token obtained:", token ? "✅ Valid" : "❌ Invalid");
+    console.log("📝 Prompt:", prompt);
+    console.log("🌐 Making request to:", DEPLOYMENT_URL);
+
+    // First, let's try a regular fetch to see what the API returns
+    const testResponse = await fetch(DEPLOYMENT_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+    });
+
+    console.log("📊 API Response Status:", testResponse.status);
+    console.log("📋 API Response Headers:", Object.fromEntries(testResponse.headers.entries()));
+    console.log("🔍 Content-Type:", testResponse.headers.get('content-type'));
+
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error("❌ API Error Response:", errorText);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: errorText, status: testResponse.status })}\n\n`);
+      res.end();
+      return;
+    }
+
+    // If the response is not event-stream, let's see what it contains
+    if (!testResponse.headers.get('content-type')?.includes('text/event-stream')) {
+      const responseText = await testResponse.text();
+      console.log("📄 Non-streaming response:", responseText);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: "API does not support streaming", response: responseText })}\n\n`);
+      res.end();
+      return;
+    }
 
     await fetchEventSource(DEPLOYMENT_URL, {
       fetch,
@@ -137,3 +177,44 @@ app.get("/stream", async (req, res) => {
 });
 
 app.listen(3000, () => console.log("✅ Backend running on http://localhost:3000"));
+
+// Test endpoint to verify API connectivity
+app.get("/test-api", async (req, res) => {
+  try {
+    const token = await getToken();
+    const prompt = req.query.prompt || "Hello";
+
+    console.log("🧪 Testing non-streaming endpoint...");
+    
+    const testResponse = await fetch(NON_STREAMING_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: prompt,
+        parameters: {
+          max_new_tokens: 100,
+          temperature: 0.7
+        }
+      }),
+    });
+
+    console.log("📊 Test API Status:", testResponse.status);
+    console.log("📋 Test API Headers:", Object.fromEntries(testResponse.headers.entries()));
+
+    const responseData = await testResponse.json();
+    console.log("📄 Test API Response:", responseData);
+
+    res.json({
+      status: testResponse.status,
+      headers: Object.fromEntries(testResponse.headers.entries()),
+      data: responseData
+    });
+
+  } catch (err) {
+    console.error("❌ Test API Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
