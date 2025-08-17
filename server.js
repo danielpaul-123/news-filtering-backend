@@ -92,7 +92,6 @@ app.get("/stream", async (req, res) => {
             console.log("🔧 Sending tool_output event (delta role: tool)");
             res.write(`event: tool_output\ndata: ${JSON.stringify(choice)}\n\n`);
           }
-          // Check if delta role is "assistant" and has tool_calls - this is a tool call
           else if (delta?.role === "assistant" && delta?.tool_calls) {
             console.log("⚙️ Sending tool event (delta role: assistant + tool_calls)");
             res.write(`event: tool\ndata: ${JSON.stringify(delta.tool_calls)}\n\n`);
